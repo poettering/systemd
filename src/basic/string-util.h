@@ -27,8 +27,9 @@
 #include "macro.h"
 
 /* What is interpreted as whitespace? */
-#define WHITESPACE        " \t\n\r"
+#define SIMPLE_WHITESPACE " \t"
 #define NEWLINE           "\n\r"
+#define WHITESPACE        SIMPLE_WHITESPACE NEWLINE
 #define QUOTES            "\"\'"
 #define COMMENTS          "#;"
 #define GLOB_CHARS        "*?["

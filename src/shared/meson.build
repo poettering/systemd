@@ -47,10 +47,10 @@ shared_sources = '''
         import-util.c
         import-util.h
         initreq.h
-        install.c
-        install.h
         install-printf.c
         install-printf.h
+        install.c
+        install.h
         journal-util.c
         journal-util.h
         logs-show.c
@@ -88,11 +88,15 @@ shared_sources = '''
         sysctl-util.h
         tests.c
         tests.h
-        udev-util.h
         udev-util.c
+        udev-util.h
         uid-range.c
         uid-range.h
         utmp-wtmp.h
+        varlink.c
+        varlink.h
+        varlink-validate.c
+        varlink-validate.h
         vlan-util.c
         vlan-util.h
         volatile-util.c
@@ -122,19 +126,20 @@ endif
 
 libshared_name = 'systemd-shared-@0@'.format(meson.project_version())
 
-libshared_deps = [threads,
-                  librt,
+libshared_deps = [libacl,
+                  libblkid,
                   libcap,
-                  libacl,
                   libcryptsetup,
                   libgcrypt,
+                  libidn,
                   libiptc,
+                  liblz4,
+                  libm,
+                  librt,
                   libseccomp,
                   libselinux,
-                  libidn,
                   libxz,
-                  liblz4,
-                  libblkid]
+                  threads]
 
 libshared = shared_library(
         libshared_name,

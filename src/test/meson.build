@@ -324,11 +324,23 @@ tests += [
          [],
          []],
 
+        [['src/test/test-varlink.c'],
+         [],
+         [threads]],
+
+        [['src/test/test-varlink-validate.c'],
+         [],
+         []],
+
         [['src/test/test-selinux.c'],
          [],
          []],
 
         [['src/test/test-sizeof.c'],
+         [libbasic],
+         []],
+
+        [['src/test/test-json.c'],
          [libbasic],
          []],
 
