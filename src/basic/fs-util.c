@@ -629,7 +629,7 @@ int chase_symlinks(const char *path, const char *original_root, unsigned flags, 
          * specified path. */
 
         /* A root directory of "/" or "" is identical to none */
-        if (isempty(original_root) || path_equal(original_root, "/"))
+        if (empty_or_root(original_root))
                 original_root = NULL;
 
         if (original_root) {
@@ -702,7 +702,7 @@ int chase_symlinks(const char *path, const char *original_root, unsigned flags, 
 
                         /* If we already are at the top, then going up will not change anything. This is in-line with
                          * how the kernel handles this. */
-                        if (isempty(done) || path_equal(done, "/"))
+                        if (empty_or_root(done))
                                 continue;
 
                         parent = dirname_malloc(done);
