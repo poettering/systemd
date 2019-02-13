@@ -2159,18 +2159,20 @@ EFI_STATUS efi_main(EFI_HANDLE image, EFI_SYSTEM_TABLE *sys_table) {
                                      L"auto-efi-default", '\0', L"EFI Default Loader", L"\\EFI\\Boot\\boot" EFI_MACHINE_TYPE_NAME ".efi");
         config_entry_add_osx(&config);
 
+        /* Let's check if there are any entries at all before we add the reboot-to-firmware option, since
+         * that one is likely to be available everybody, and pretty useless if its the only option. */
+        if (config.entry_count == 0) {
+                Print(L"No loader entries found. Please install entries through \\loader\\entries\\*.conf or \\EFI\\Linux\\*.efi.");
+                uefi_call_wrapper(BS->Stall, 1, 3 * 1000 * 1000);
+                goto out;
+        }
+
         if (config.auto_firmware && efivar_get_raw(&global_guid, L"OsIndicationsSupported", &b, &size) == EFI_SUCCESS) {
                 UINT64 osind = (UINT64)*b;
 
                 if (osind & EFI_OS_INDICATIONS_BOOT_TO_FW_UI)
                         config_entry_add_call(&config, L"auto-reboot-to-firmware-setup", L"Reboot Into Firmware Interface", reboot_into_firmware);
                 FreePool(b);
-        }
-
-        if (config.entry_count == 0) {
-                Print(L"No loader found. Configuration files in \\loader\\entries\\*.conf are needed.");
-                uefi_call_wrapper(BS->Stall, 1, 3 * 1000 * 1000);
-                goto out;
         }
 
         config_write_entries_to_variable(&config);
