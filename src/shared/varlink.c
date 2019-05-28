@@ -1194,6 +1194,15 @@ int varlink_close(Varlink *v) {
         return 1;
 }
 
+Varlink* varlink_close_unref(Varlink *v) {
+
+        if (!v)
+                return NULL;
+
+        (void) varlink_close(v);
+        return varlink_unref(v);
+}
+
 Varlink* varlink_flush_close_unref(Varlink *v) {
 
         if (!v)
@@ -1201,7 +1210,6 @@ Varlink* varlink_flush_close_unref(Varlink *v) {
 
         (void) varlink_flush(v);
         (void) varlink_close(v);
-
         return varlink_unref(v);
 }
 
