@@ -38,10 +38,12 @@ BuildPackages=
         libblkid-devel
         libcap-devel
         libcurl-devel
+        libfdisk-devel
         libgcrypt-devel
         libidn2-devel
         libmicrohttpd-devel
         libmount-devel
+        libpwquality-devel
         libseccomp-devel
         libselinux-devel
         libtool
@@ -51,6 +53,7 @@ BuildPackages=
         lz4-devel
         m4
         meson
+        openssl-devel
         pam-devel
         pcre2-devel
         pkgconfig
@@ -61,6 +64,7 @@ BuildPackages=
         xz-devel
 
 Packages=
+        e2fsprogs
         libidn2
 
 BuildDirectory=mkosi.builddir
