@@ -242,6 +242,7 @@ conf.set_quoted('SYSTEMD_EXPORT_PATH',                        join_paths(rootlib
 conf.set_quoted('VENDOR_KEYRING_PATH',                        join_paths(rootlibexecdir, 'import-pubring.gpg'))
 conf.set_quoted('USER_KEYRING_PATH',                          join_paths(pkgsysconfdir, 'import-pubring.gpg'))
 conf.set_quoted('DOCUMENT_ROOT',                              join_paths(pkgdatadir, 'gatewayd'))
+conf.set_quoted('SYSTEMD_HOMEWORK_PATH',                      join_paths(rootlibexecdir, 'systemd-homework'))
 conf.set_quoted('SYSTEMD_USERWORK_PATH',                      join_paths(rootlibexecdir, 'systemd-userwork'))
 conf.set10('MEMORY_ACCOUNTING_DEFAULT',                       memory_accounting_default)
 conf.set_quoted('MEMORY_ACCOUNTING_DEFAULT_YES_NO',           memory_accounting_default ? 'yes' : 'no')
@@ -837,6 +838,12 @@ endif
 libmount = dependency('mount',
                       version : fuzzer_build ? '>= 0' : '>= 2.30')
 
+want_libfdisk = get_option('homed')
+libfdisk = dependency('fdisk', required : want_libfdisk)
+
+libpwquality = dependency('pwquality')
+conf.set10('HAVE_LIBPWQUALITY', libpwquality.found())
+
 want_seccomp = get_option('seccomp')
 if want_seccomp != 'false' and not skip_deps
         libseccomp = dependency('libseccomp',
@@ -961,7 +968,7 @@ conf.set10('HAVE_MICROHTTPD', have)
 want_libcryptsetup = get_option('libcryptsetup')
 if want_libcryptsetup != 'false' and not skip_deps
         libcryptsetup = dependency('libcryptsetup',
-                                   version : '>= 1.6.0',
+                                   version : '>= 2.2.0',
                                    required : want_libcryptsetup == 'true')
         have = libcryptsetup.found()
         have_sector = cc.has_member(
@@ -1281,6 +1288,7 @@ foreach term : ['utmp',
                 'machined',
                 'portabled',
                 'userdb',
+                'homed',
                 'networkd',
                 'timedated',
                 'timesyncd',
@@ -1495,6 +1503,7 @@ subdir('src/locale')
 subdir('src/machine')
 subdir('src/portable')
 subdir('src/userdb')
+subdir('src/home')
 subdir('src/nspawn')
 subdir('src/resolve')
 subdir('src/timedate')
@@ -1963,6 +1972,34 @@ if conf.get('ENABLE_USERDB') == 1
                    install_rpath : rootlibexecdir,
                    install : true,
                    install_dir : rootbindir)
+endif
+
+if conf.get('ENABLE_HOMED') == 1
+        executable('systemd-homework',
+                   systemd_homework_sources,
+                   include_directories : includes,
+                   link_with : [libshared],
+                   dependencies : [threads,
+                                   libcryptsetup,
+                                   libblkid,
+                                   libcrypt,
+                                   libopenssl,
+                                   libfdisk],
+                   install_rpath : rootlibexecdir,
+                   install : true,
+                   install_dir : rootlibexecdir)
+
+        executable('systemd-homed',
+                   systemd_homed_sources,
+                   include_directories : includes,
+                   link_with : [libshared],
+                   dependencies : [threads,
+                                   libcrypt,
+                                   libopenssl,
+                                   libpwquality],
+                   install_rpath : rootlibexecdir,
+                   install : true,
+                   install_dir : rootlibexecdir)
 endif
 
 foreach alias : ['halt', 'poweroff', 'reboot', 'runlevel', 'shutdown', 'telinit']
