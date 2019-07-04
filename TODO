@@ -19,6 +19,14 @@ Janitorial Clean-ups:
 
 Features:
 
+* socket units: allow creating a udev monitor socket with ListenDevices= or so,
+  with matches, then actviate app thorugh that passing socket oveer
+
+* cryptsetup: allow encoding key directly in /etc/crypttab, maybe with a
+  "base64:" prefix. Useful in particular for pkcs11 mode.
+
+* cryptsetup: add logic to wait for pkcs11 token
+
 * coredump: maybe when coredumping read a new xattr from /proc/$PID/exe that
   may be used to mark a whole binary as non-coredumpable. Would fix:
   https://bugs.freedesktop.org/show_bug.cgi?id=69447
@@ -394,15 +402,6 @@ Features:
   natural habitat.
 
 * maybe introduce gpt auto discovery for /var/tmp?
-
-* maybe add gpt-partition-based user management: each user gets his own
-  LUKS-encrypted GPT partition with a new GPT type. A small nss module
-  enumerates users via udev partition enumeration. UIDs are assigned in a fixed
-  way: the partition index is added as offset to some fixed base uid. User name
-  is stored in GPT partition name. A PAM module authenticates the user via the
-  LUKS partition password. Benefits: strong per-user security, compatibility
-  with stateless/read-only/verity-enabled root. (other idea: do this based on
-  loopback files in /home, without GPT involvement)
 
 * gpt-auto logic: introduce support for discovering /var matching an image. For
   that, use a partition type UUID that is hashed from the OS name (as encoded

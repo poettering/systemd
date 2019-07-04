@@ -1,0 +1,51 @@
+PRIMARILY:
+
+- pkcs11 smart card support: pin certificate in record, then for auth, generate random data, ask smartcard to sign it, then verify signature. For LUKS key store encrypted key in record, decrypt it with smartcard.
+- write fscrypt key into client's keyring
+- don't use argon2 with pkcs#11 cryptsetup mode
+- move the ssh authorized keys stuff from homectl to userdbctl
+- honour passwordChangeNow, and unset it in homectl passwd
+- fix borked yubikey cryptsetup stuff?
+
+Before first release:
+- unit file lockdown (caps, …)
+- extend test case to cover more
+- man pages:
+    cryptsetup pkcs11
+    pam_systemd update
+    nss-systemd update
+- blog story
+- fix userwork and homework paths
+- drop LOG_DEBUG being forced in userdbd and homed
+- drop debug=true being forced in pam_systemd_home
+- performance data
+
+Later:
+- when user tries to log into record signed by unrecognized key, automatically add key to our chain after polkit auth
+- hook up machined/nspawn users with a varlink user query interface
+- rollback when resize fails mid-operation
+- forget key on suspend (requires gnome rework so that lock screen runs outside of uid)
+- resize on login?
+- update LUKS password on login if we find there's a password that unlocks the JSON record but not the LUKS device.
+- always fstrim on logout?
+- compare with accounts daemon
+- create on activate?
+- properties: icon url?, preferred session type?, administrator bool (which translates to 'wheel' membership)?, address?, telephone?, vcard?, samba stuff?, parental controls?
+- communicate clearly when usb stick is safe to remove. probably involves
+  beefing up logind to make pam session close hook synchronous and wait until
+  systemd --user is shut down.
+- logind: maybe keep a "busy fd" as long as there's a non-released session around or the user@.service
+- fscrypt key mgmt (maybe in xattr?)
+- shrink fs on logout?
+- maybe make automatic, read-only, time-based reflink-copies of LUKS disk images (think: time machine)
+- distuingish destroy / remove (i.e. currently we can unregister a user, unregister+remove their home directory, but not just remove their home directory)
+- in systemd's PAMName= logic: query passwords with ssh-askpassword, so that we can make "loginctl set-linger" mode work
+- fingerprint authentication, pattern authentication, …
+- make sure "classic" user records can also be managed by homed
+- description field for groups
+- make size of $XDG_RUNTIME_DIR configurable in user record
+- reuse pwquality magic in firstboot
+- query password from kernel keyring first
+- update in absence
+- add a "access mode" + "fstype" field to the "status" section of json identity records reflecting the actually used access mode and fstype, even on non-luks backends
+- move acct mgmt stuff from pam_systemd_home to pam_systemd?
