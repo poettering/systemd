@@ -236,6 +236,10 @@ if conf.get('HAVE_KMOD') == 1
         shared_sources += files('module-util.c')
 endif
 
+if conf.get('HAVE_PAM') == 1
+        shared_sources += files('pam-util.c', 'pam-util.h')
+endif
+
 generate_ip_protocol_list = find_program('generate-ip-protocol-list.sh')
 ip_protocol_list_txt = custom_target(
         'ip-protocol-list.txt',
@@ -293,7 +297,7 @@ libshared_deps = [threads,
                   libxz,
                   liblz4,
                   libblkid,
-                  libcrypt]
+                  libpam]
 
 libshared_sym_path = '@0@/libshared.sym'.format(meson.current_source_dir())
 
