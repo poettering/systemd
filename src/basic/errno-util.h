@@ -86,3 +86,19 @@ static inline bool ERRNO_IS_RESOURCE(int r) {
                       ENFILE,
                       ENOMEM);
 }
+
+/* Three different errors for "operation/system call/ioctl not supported" */
+static inline bool ERRNO_IS_NOT_SUPPORTED(int r) {
+        return IN_SET(abs(r),
+                      EOPNOTSUPP,
+                      ENOTTY,
+                      ENOSYS);
+}
+
+/* Three difference errors for "not enough disk space" */
+static inline bool ERRNO_IS_DISK_SPACE(int r) {
+        return IN_SET(abs(r),
+                      ENOSPC,
+                      EDQUOT,
+                      EFBIG);
+}
