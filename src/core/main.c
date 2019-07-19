@@ -2418,6 +2418,10 @@ int main(int argc, char *argv[]) {
                                         goto finish;
                                 }
 
+                                /* And open logging again. Quite possibly we have mounted /dev now, so
+                                 * /dev/kmsg becomes available. */
+                                log_open();
+
                                 r = initialize_security(
                                                 &loaded_policy,
                                                 &security_start_timestamp,
