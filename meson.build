@@ -1949,6 +1949,15 @@ if conf.get('ENABLE_USERDB') == 1
                    install_rpath : rootlibexecdir,
                    install : true,
                    install_dir : rootlibexecdir)
+
+        executable('userdbctl',
+                   userdbctl_sources,
+                   include_directories : includes,
+                   link_with : [libshared],
+                   dependencies : [threads],
+                   install_rpath : rootlibexecdir,
+                   install : true,
+                   install_dir : rootbindir)
 endif
 
 foreach alias : ['halt', 'poweroff', 'reboot', 'runlevel', 'shutdown', 'telinit']
