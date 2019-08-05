@@ -84,6 +84,8 @@ shared_sources = files('''
         generator.c
         generator.h
         gpt.h
+        group-record-nss.c
+        group-record-nss.h
         group-record.c
         group-record.h
         id128-print.c
@@ -180,6 +182,8 @@ shared_sources = files('''
         uid-range.h
         unit-file.c
         unit-file.h
+        user-record-nss.c
+        user-record-nss.h
         user-record.c
         user-record.h
         utmp-wtmp.h
