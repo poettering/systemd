@@ -186,6 +186,8 @@ shared_sources = files('''
         user-record-nss.h
         user-record.c
         user-record.h
+        userdb.c
+        userdb.h
         utmp-wtmp.h
         varlink.c
         varlink.h
