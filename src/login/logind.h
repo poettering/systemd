@@ -12,6 +12,7 @@
 #include "list.h"
 #include "set.h"
 #include "time-util.h"
+#include "user-record.h"
 
 typedef struct Manager Manager;
 
@@ -28,7 +29,7 @@ struct Manager {
         Hashmap *seats;
         Hashmap *sessions;
         Hashmap *sessions_by_leader;
-        Hashmap *users;
+        Hashmap *users;  /* indexed by UID */
         Hashmap *inhibitors;
         Hashmap *buttons;
         Hashmap *brightness_writers;
@@ -131,7 +132,7 @@ int manager_add_device(Manager *m, const char *sysfs, bool master, Device **_dev
 int manager_add_button(Manager *m, const char *name, Button **_button);
 int manager_add_seat(Manager *m, const char *id, Seat **_seat);
 int manager_add_session(Manager *m, const char *id, Session **_session);
-int manager_add_user(Manager *m, uid_t uid, gid_t gid, const char *name, const char *home, User **_user);
+int manager_add_user(Manager *m, UserRecord *ur, User **_user);
 int manager_add_user_by_name(Manager *m, const char *name, User **_user);
 int manager_add_user_by_uid(Manager *m, uid_t uid, User **_user);
 int manager_add_inhibitor(Manager *m, const char* id, Inhibitor **_inhibitor);
