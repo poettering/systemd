@@ -102,3 +102,10 @@ static inline bool ERRNO_IS_DISK_SPACE(int r) {
                       EDQUOT,
                       EFBIG);
 }
+
+/* Two different errors for access problems */
+static inline bool ERRNO_IS_PRIVILEGE(int r) {
+        return IN_SET(abs(r),
+                      EACCES,
+                      EPERM);
+}
