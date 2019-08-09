@@ -137,3 +137,5 @@ int putsgent_sane(const struct sgrp *sg, FILE *stream);
 int make_salt(char **ret);
 
 bool is_nologin_shell(const char *shell);
+
+bool hashed_password_valid(const char *s);

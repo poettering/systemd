@@ -925,3 +925,15 @@ int make_salt(char **ret) {
         *ret = salt;
         return 0;
 }
+
+bool hashed_password_valid(const char *s) {
+
+        /* Returns true if the specified string is a 'valid' hashed UNIX password, i.e. if starts with '$' or
+         * with '!$' (the latter being a valid, yet locked password). */
+
+        if (!s)
+                return false;
+
+        return s[0] == '$' ||
+                (s[0] == '!' && s[1] == '$');
+}
