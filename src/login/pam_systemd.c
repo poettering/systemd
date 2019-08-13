@@ -305,14 +305,14 @@ static int append_session_memory_max(pam_handle_t *handle, sd_bus_message *m, co
         int r;
 
         if (isempty(limit))
-                return 0;
+                return PAM_SUCCESS;
 
         if (streq(limit, "infinity")) {
                 r = sd_bus_message_append(m, "(sv)", "MemoryMax", "t", (uint64_t)-1);
                 if (r < 0)
                         return pam_bus_log_create_error(handle, r);
 
-                return 0;
+                return PAM_SUCCESS;
         }
 
         r = parse_permille(limit);
@@ -321,7 +321,7 @@ static int append_session_memory_max(pam_handle_t *handle, sd_bus_message *m, co
                 if (r < 0)
                         return pam_bus_log_create_error(handle, r);
 
-                return 0;
+                return PAM_SUCCESS;
         }
 
         r = parse_size(limit, 1024, &val);
@@ -330,11 +330,11 @@ static int append_session_memory_max(pam_handle_t *handle, sd_bus_message *m, co
                 if (r < 0)
                         return pam_bus_log_create_error(handle, r);
 
-                return 0;
+                return PAM_SUCCESS;
         }
 
         pam_syslog(handle, LOG_WARNING, "Failed to parse systemd.memory_max, ignoring: %s", limit);
-        return 0;
+        return PAM_SUCCESS;
 }
 
 static int append_session_tasks_max(pam_handle_t *handle, sd_bus_message *m, const char *limit) {
@@ -343,7 +343,7 @@ static int append_session_tasks_max(pam_handle_t *handle, sd_bus_message *m, con
 
         /* No need to parse "infinity" here, it will be set unconditionally later in manager_start_scope() */
         if (isempty(limit) || streq(limit, "infinity"))
-                return 0;
+                return PAM_SUCCESS;
 
         r = safe_atou64(limit, &val);
         if (r >= 0) {
@@ -353,7 +353,7 @@ static int append_session_tasks_max(pam_handle_t *handle, sd_bus_message *m, con
         } else
                 pam_syslog(handle, LOG_WARNING, "Failed to parse systemd.tasks_max, ignoring: %s", limit);
 
-        return 0;
+        return PAM_SUCCESS;
 }
 
 static int append_session_cg_weight(pam_handle_t *handle, sd_bus_message *m, const char *limit, const char *field) {
@@ -361,7 +361,7 @@ static int append_session_cg_weight(pam_handle_t *handle, sd_bus_message *m, con
         int r;
 
         if (isempty(limit))
-                return 0;
+                return PAM_SUCCESS;
 
         r = cg_weight_parse(limit, &val);
         if (r >= 0) {
@@ -373,7 +373,7 @@ static int append_session_cg_weight(pam_handle_t *handle, sd_bus_message *m, con
         else
                 pam_syslog(handle, LOG_WARNING, "Failed to parse systemd.io_weight, ignoring: %s", limit);
 
-        return 0;
+        return PAM_SUCCESS;
 }
 
 static const char* getenv_harder(pam_handle_t *handle, const char *key, const char *fallback) {
@@ -650,19 +650,19 @@ _public_ PAM_EXTERN int pam_sm_open_session(
 
         r = append_session_memory_max(handle, m, memory_max);
         if (r < 0)
-                return PAM_SESSION_ERR;
+                return r;
 
         r = append_session_tasks_max(handle, m, tasks_max);
         if (r < 0)
-                return PAM_SESSION_ERR;
+                return r;
 
         r = append_session_cg_weight(handle, m, cpu_weight, "CPUWeight");
         if (r < 0)
-                return PAM_SESSION_ERR;
+                return r;
 
         r = append_session_cg_weight(handle, m, io_weight, "IOWeight");
         if (r < 0)
-                return PAM_SESSION_ERR;
+                return r;
 
         r = sd_bus_message_close_container(m);
         if (r < 0)
