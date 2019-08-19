@@ -682,3 +682,8 @@ global:
         sd_bus_object_vtable_format;
         sd_event_source_disable_unref;
 } LIBSYSTEMD_241;
+
+LIBSYSTEMD_244 {
+global:
+        sd_bus_message_sensitive;
+} LIBSYSTEMD_243;
