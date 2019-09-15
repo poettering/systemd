@@ -17,7 +17,7 @@ expose. Or in other words, it both allows applications to efficiently query
 user/group records from local services, and allows local subsystems to provide
 user/group records efficiently to local applications.
 
-This simple API only exposes only three method calls, and requires only a small
+This simple API exposes only three method calls, and requires only a small
 subset of the Varlink functionality.
 
 ## Why Varlink?
@@ -29,7 +29,7 @@ reasons:
 
 1. User/Group record resolution should work during early boot and late shutdown
    without special handling. This is very hard to do with D-Bus, as the broker
-   service for D-Bus generally runs as regular system daemon and is hence only
+   service for D-Bus generally runs as a regular system daemon and is hence only
    available at the latest boot stage.
 
 2. The JSON user/group records are native JSON data, hence picking an IPC
@@ -108,7 +108,7 @@ API. Special care is taken to avoid recursion between these two compatibility
 mechanisms.
 
 Subsystems that shall provide user/group records to the system may choose
-between offering them via an NSS module or via a this Varlink API, either way
+between offering them via an NSS module or via this Varlink API, either way
 all records are accessible via both APIs, due to the two-way compatibility. It
 is also possible to provide the same records via both APIs directly, but in
 that case the compatibility logic must be turned off. There are mechanisms in
@@ -161,8 +161,8 @@ error ConflictingRecordFound()
 
 The `GetUserRecord` method looks up or enumerates a user record. If the `uid`
 parameter is set it specifies the numeric UNIX UID to search for. If the
-`userName` parameter is set is specifies the name of the user to search
-for. Typically, only one of the two parameters are set, depending whether a
+`userName` parameter is set it specifies the name of the user to search
+for. Typically, only one of the two parameters are set, depending on whether a
 look-up by UID or by name is desired. However, clients may also specify both
 parameters, in which case a record matching both will be returned, and if only
 one exists that matches one of the two parameters but not the other an error of
@@ -177,8 +177,8 @@ being talked to (i.e. to the same name as the `AF_UNIX` socket path, with the
 of multiple services on the same socket (which is used by
 `systemd-userdbd.service`).
 
-The method call returns one or more user records, depending which type of query is
-used (see above). The record is returned in the `record` field. The
+The method call returns one or more user records, depending on which type of
+query is used (see above). The record is returned in the `record` field. The
 `incomplete` field indicates whether the record is complete. Services providing
 user record lookup should only pass the `privileged` section of user records to
 clients that either match the user the record is about or to sufficiently
@@ -197,7 +197,7 @@ If a method call with an incorrectly set `service` field is received
 (i.e. either not set at all, or not to the service's own name) a `BadService`
 error is generated. Finally, `ServiceNotAvailable` should be returned when the
 backing subsystem is not operational for some reason and hence no information
-about existence or non-existence of a record can be returned nor any user
+about the existence or non-existence of a record can be returned nor any user
 record at all.
 
 The `GetGroupRecord` method call works analogously but for groups.
@@ -210,10 +210,10 @@ returned. The return value is a pair of user name and group name, where the
 user is a member of the group. If both arguments are specified the specified
 membership will be tested for, but no others. Unless both arguments are
 specified the method call needs to be made with `more` set, so that multiple
-replies can be returned (since typically there are are multiple members per
+replies can be returned (since typically there are multiple members per
 group and also multiple groups a user is member of). As with `GetUserRecord`
 and `GetGroupRecord` the `service` parameter needs to contain the name of the
-service being talked to, in order to allow implementation of multiple service
+service being talked to, in order to allow implementation of multiple services
 within the same IPC socket. In case no matching membership is known
 `NoRecordFound` is returned. The other two errors are also generated in the
 same cases as for `GetUserRecord` and `GetGroupRecord`.
@@ -226,7 +226,7 @@ before the complete list is acquired.
 Note that only the `GetMemberships` call is authoritative about memberships of
 users in groups. i.e. it should not be considered sufficient to check the
 `memberOf` field of user records and the `members` field of group records to
-acquire the full list of memberships. The full list can only bet determined by
+acquire the full list of memberships. The full list can only be determined by
 `GetMemberships`, and as mentioned requires merging of these lists of all local
 services. Result of this is that it can be one service that defines a user A,
 and another service that defines a group B, and a third service that declares
