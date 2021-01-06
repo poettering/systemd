@@ -273,6 +273,7 @@ static size_t table_data_size(TableDataType type, const void *data) {
         case TABLE_SIZE:
         case TABLE_INT64:
         case TABLE_UINT64:
+        case TABLE_UINT64_HEX:
         case TABLE_BPS:
                 return sizeof(uint64_t);
 
@@ -925,6 +926,7 @@ int table_add_many_internal(Table *t, TableDataType first_type, ...) {
                         break;
 
                 case TABLE_UINT64:
+                case TABLE_UINT64_HEX:
                         buffer.uint64 = va_arg(ap, uint64_t);
                         data = &buffer.uint64;
                         break;
@@ -1265,6 +1267,7 @@ static int cell_data_compare(TableData *a, size_t index_a, TableData *b, size_t 
                         return CMP(a->uint32, b->uint32);
 
                 case TABLE_UINT64:
+                case TABLE_UINT64_HEX:
                         return CMP(a->uint64, b->uint64);
 
                 case TABLE_PERCENT:
@@ -1612,6 +1615,18 @@ static const char *table_data_format(Table *t, TableData *d, bool avoid_uppercas
                         return NULL;
 
                 sprintf(p, "%" PRIu64, d->uint64);
+                d->formatted = TAKE_PTR(p);
+                break;
+        }
+
+        case TABLE_UINT64_HEX: {
+                _cleanup_free_ char *p;
+
+                p = new(char, 16 + 1);
+                if (!p)
+                        return NULL;
+
+                sprintf(p, "%" PRIx64, d->uint64);
                 d->formatted = TAKE_PTR(p);
                 break;
         }
@@ -2511,6 +2526,7 @@ static int table_data_to_json(TableData *d, JsonVariant **ret) {
                 return json_variant_new_unsigned(ret, d->uint32);
 
         case TABLE_UINT64:
+        case TABLE_UINT64_HEX:
                 return json_variant_new_unsigned(ret, d->uint64);
 
         case TABLE_PERCENT:
