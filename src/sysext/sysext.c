@@ -509,14 +509,15 @@ static int merge_subprocess(Hashmap *images, const char *workspace) {
                 }
 
                 /* Now that we can look into the extension image, let's see of the OS version is compatible */
-                r = parse_os_release(
+                r = parse_extension_release(
                                 p,
+                                img->name,
                                 "ID", &extension_os_release_id,
                                 "VERSION_ID", &extension_os_release_version_id,
                                 "SYSEXT_LEVEL", &extension_os_release_sysext_level,
                                 NULL);
                 if (r == -ENOENT)
-                        log_notice_errno(r, "Extension '%s' carries no os-release data, not checking for version compatibility.", img->name);
+                        return log_notice_errno(r, "Extension '%s' carries no extension-release data, ignoring extension.", img->name);
                 else if (r < 0)
                         return log_error_errno(r, "Failed to acquire 'os-release' data of extension '%s': %m", img->name);
                 else {
