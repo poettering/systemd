@@ -14,21 +14,47 @@
 #include "string-table.h"
 #include "string-util.h"
 
+static const char *skip_protocol_and_hostname(const char *url) {
+        const char *d;
+        size_t n;
+
+        /* Find colon separating protocol and hostname */
+        d = strchr(url, ':');
+        if (!d || url == d)
+                return NULL;
+        d++;
+
+        /* Skip slashes after colon */
+        d += strspn(d, "/");
+
+        /* Skip everything till next slash or end */
+        n = strcspn(d, "/");
+        if (n == 0)
+                return NULL;
+
+        return d + n;
+}
+
 int import_url_last_component(const char *url, char **ret) {
-        const char *e, *p;
+
+        const char *e, *p, *h;
         char *s;
 
-        e = strchrnul(url, '?');
+        h = skip_protocol_and_hostname(url);
+        if (!h)
+                return -EINVAL;
 
-        while (e > url && e[-1] == '/')
+        e = strchrnul(h, '?');
+
+        while (e > h && e[-1] == '/')
                 e--;
 
         p = e;
-        while (p > url && p[-1] != '/')
+        while (p > h && p[-1] != '/')
                 p--;
 
         if (e <= p)
-                return -EINVAL;
+                return -EADDRNOTAVAIL;
 
         s = strndup(p, e - p);
         if (!s)
@@ -39,28 +65,32 @@ int import_url_last_component(const char *url, char **ret) {
 }
 
 int import_url_change_last_component(const char *url, const char *suffix, char **ret) {
-        const char *e;
+        const char *e, *h;
         char *s;
 
         assert(url);
         assert(ret);
 
-        e = strchrnul(url, '?');
-
-        while (e > url && e[-1] == '/')
-                e--;
-
-        while (e > url && e[-1] != '/')
-                e--;
-
-        if (e <= url)
+        h = skip_protocol_and_hostname(url);
+        if (!h)
                 return -EINVAL;
+        assert(h > url);
 
-        s = new(char, (e - url) + strlen(suffix) + 1);
+        e = strchrnul(h, '?');
+
+        while (e > h && e[-1] == '/') /* Eat trailing slashes */
+                e--;
+
+        while (e > h && e[-1] != '/') /* Eat last word */
+                e--;
+
+        assert(e > url);
+
+        s = new(char, (e - url) + 1 + strlen(suffix) + 1);
         if (!s)
                 return -ENOMEM;
 
-        strcpy(mempcpy(s, url, e - url), suffix);
+        strcpy(stpcpy(mempcpy(s, url, e - url), e[-1] == '/' ? "" : "/"), suffix);
         *ret = s;
         return 0;
 }
