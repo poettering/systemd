@@ -120,9 +120,12 @@ const char *gpt_partition_type_uuid_to_string_harder(
                 char buffer[static ID128_UUID_STRING_MAX]);
 int gpt_partition_type_uuid_from_string(const char *s, sd_id128_t *ret);
 
+uint64_t gpt_partition_type_uuid_to_supported_flags(sd_id128_t);
+
 typedef struct GptPartitionType {
         sd_id128_t uuid;
         const char *name;
+        uint64_t supported_flags; /* Combination of the GPT_FLAG_* flags above */
 } GptPartitionType;
 
 extern const GptPartitionType gpt_partition_type_table[];
