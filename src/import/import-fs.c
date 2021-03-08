@@ -174,6 +174,9 @@ static int import_fs(int argc, char *argv[], void *userdata) {
                 log_info("Importing '%s', saving as '%s'.", strempty(pretty), local);
         }
 
+        if (!arg_sync)
+                log_info("File system synchronization on completion is off.");
+
         if (arg_direct) {
                 if (arg_force)
                         (void) rm_rf(final_path, REMOVE_ROOT|REMOVE_PHYSICAL|REMOVE_SUBVOLUME);
