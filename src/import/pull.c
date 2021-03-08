@@ -137,6 +137,9 @@ static int pull_tar(int argc, char *argv[], void *userdata) {
         if (r < 0)
                 return r;
 
+        if (!FLAGS_SET(arg_pull_flags, PULL_SYNC))
+                log_info("File system synchronization on completion is off.");
+
         r = tar_pull_new(&pull, event, arg_image_root, on_tar_finished, event);
         if (r < 0)
                 return log_error_errno(r, "Failed to allocate puller: %m");
@@ -204,7 +207,9 @@ static int pull_raw(int argc, char *argv[], void *userdata) {
         if (r < 0)
                 return r;
 
-        r = raw_pull_new(&pull, event, arg_image_root, on_raw_finished, event);
+        if (!FLAGS_SET(arg_pull_flags, PULL_SYNC))
+                log_info("File system synchronization on completion is off.");
+         r = raw_pull_new(&pull, event, arg_image_root, on_raw_finished, event);
         if (r < 0)
                 return log_error_errno(r, "Failed to allocate puller: %m");
 
