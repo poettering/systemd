@@ -222,7 +222,7 @@ int find_suitable_partition(
                 if (!isempty(pinfo.label)) /* used */
                         continue;
 
-                if (pinfo.size < space) /* too small */
+                if (space != UINT64_MAX && pinfo.size < space) /* too small */
                         continue;
 
                 if (smallest.partno != UINT64_MAX && smallest.size <= pinfo.size) /* already found smaller */

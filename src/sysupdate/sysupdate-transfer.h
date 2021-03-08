@@ -16,6 +16,7 @@ struct Transfer {
         char *definition_path;
         char *min_version;
         char **protected_versions;
+        char *current_symlink;
 
         Resource source, target;
 
@@ -29,6 +30,7 @@ struct Transfer {
         bool partition_flags_set;
         mode_t mode;
         uint64_t tries_left;
+        int read_only;
 
         /* If we create a new file/dir/subvol in the fs, the temporary and final path we create it under */
         char *temporary_path;
@@ -39,7 +41,7 @@ struct Transfer {
         PartitionChange partition_change;
 
         /* When we write an entry (regardless if file/dir/subvol or partition, shall we make it read-only? */
-        int make_read_only;
+        int install_read_only;
 };
 
 Transfer *transfer_new(void);

@@ -56,5 +56,5 @@ const char *update_set_flags_to_glyph(UpdateSetFlags flags) {
         if ((flags & (UPDATE_AVAILABLE|UPDATE_INSTALLED|UPDATE_NEWEST|UPDATE_OBSOLETE)) == (UPDATE_AVAILABLE|UPDATE_NEWEST))
                 return special_glyph(SPECIAL_GLYPH_CIRCLE_ARROW);
 
-        return "";
+        return " ";
 }

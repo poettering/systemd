@@ -104,7 +104,7 @@ static void compile_pattern_fields(
                 .size = i->metadata.size,
                 .tries_done = i->metadata.tries_done,
                 .tries_left = t->tries_left != UINT64_MAX ? t->tries_left : i->metadata.tries_left,
-                .read_only = t->make_read_only >= 0 ? t->make_read_only : i->metadata.read_only,
+                .read_only = t->read_only >= 0 ? t->read_only : i->metadata.read_only,
                 .sha256sum_set = i->metadata.sha256sum_set,
         };
 
@@ -457,7 +457,7 @@ int instance_acquire(Instance *i) {
                 }
         }
 
-        t->make_read_only = f.read_only;
+        t->install_read_only = f.read_only;
 
         /* For regular file cases the only step left is to install the file in place, which
          * instance_install() will do via rename(). For partition cases the only step left is to update the
@@ -482,7 +482,7 @@ int instance_install(Instance *i) {
                 r = install_file(AT_FDCWD, t->temporary_path,
                                  AT_FDCWD, t->final_path,
                                  INSTALL_REPLACE|
-                                 (t->make_read_only ? INSTALL_READ_ONLY : 0)|
+                                 (t->install_read_only > 0 ? INSTALL_READ_ONLY : 0)|
                                  (t->target.type == RESOURCE_REGULAR_FILE ? INSTALL_FSYNC_FULL : INSTALL_SYNCFS));
                 if (r < 0)
                         return log_error_errno(r, "Failed to move '%s' into place: %m", t->final_path);
@@ -508,6 +508,52 @@ int instance_install(Instance *i) {
                          resource_type_to_string(i->resource->type),
                          t->partition_info.device,
                          resource_type_to_string(t->target.type));
+        }
+
+        if (t->current_symlink) {
+                _cleanup_free_ char *buf = NULL, *parent = NULL, *relative = NULL;
+                const char *link_path, *link_target;
+
+                if (RESOURCE_IS_FILESYSTEM(t->target.type)) {
+
+                        assert(t->target.path);
+
+                        if (path_is_absolute(t->current_symlink))
+                                link_path = t->current_symlink;
+                        else {
+                                buf = path_make_absolute(t->current_symlink, t->target.path);
+                                if (!buf)
+                                        return log_oom();
+
+                                link_path = buf;
+                        }
+
+                        link_target = t->final_path;
+
+                } else if (t->target.type == RESOURCE_PARTITION) {
+
+                        assert(path_is_absolute(t->current_symlink));
+
+                        link_path = t->current_symlink;
+                        link_target = t->partition_info.device;
+                } else
+                        assert_not_reached("unexpected target resource type");
+
+                if (link_target) {
+                        r = path_extract_directory(link_path, &parent);
+                        if (r < 0)
+                                return log_error_errno(r, "Failed to extract directory of target path '%s': %m", link_path);
+
+                        r = path_make_relative(parent, link_target, &relative);
+                        if (r < 0)
+                                return log_error_errno(r, "Failed to make symlink path '%s' relative to '%s': %m", link_target, parent);
+
+                        r = symlink_atomic(relative, link_path);
+                        if (r < 0)
+                                return log_error_errno(r, "Failed to update current symlink '%s' → '%s': %m", link_path, relative);
+
+                        log_info("Updated symlink '%s' → '%s'.", link_path, relative);
+                }
         }
 
         return 0;

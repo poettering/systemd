@@ -24,6 +24,7 @@ Transfer *transfer_free(Transfer *t) {
         free(t->definition_path);
         free(t->min_version);
         strv_free(t->protected_versions);
+        free(t->current_symlink);
         free(t->final_path);
 
         partition_info_destroy(&t->partition_info);
@@ -47,8 +48,9 @@ Transfer *transfer_new(void) {
                 .remove_temporary = true,
                 .mode = MODE_INVALID,
                 .tries_left = UINT64_MAX,
+                .read_only = -1, /* user configured */
                 .partition_info = PARTITION_INFO_NULL,
-                .make_read_only = -1,
+                .install_read_only = -1, /* ultimately determined */
         };
 
         return t;
@@ -131,6 +133,39 @@ static int config_parse_min_version(
         }
 
         return free_and_replace(*version, resolved);
+}
+
+static int config_parse_current_symlink(
+                const char *unit,
+                const char *filename,
+                unsigned line,
+                const char *section,
+                unsigned section_line,
+                const char *lvalue,
+                int ltype,
+                const char *rvalue,
+                void *data,
+                void *userdata) {
+
+        _cleanup_free_ char *resolved = NULL;
+        char **current_symlink = data;
+        int r;
+
+        assert(rvalue);
+        assert(data);
+
+        r = specifier_printf(rvalue, specifier_table, NULL, &resolved);
+        if (r < 0) {
+                log_syntax(unit, LOG_WARNING, filename, line, r,
+                           "Failed to expand specifiers in CurrentSymlink=, ignoring: %s", rvalue);
+                return 0;
+        }
+
+        r = path_simplify_and_warn(resolved, 0, unit, filename, line, lvalue);
+        if (r < 0)
+                return 0;
+
+        return free_and_replace(*current_symlink, resolved);
 }
 
 static int config_parse_instances_max(
@@ -339,10 +374,11 @@ int transfer_read_definition(Transfer *t, const char *path) {
                 { "Target",      "PartitionFlags",  config_parse_partition_flags,  0, t                      },
                 { "Target",      "Mode",            config_parse_mode,             0, &t->mode               },
                 { "Target",      "TriesLeft",       config_parse_uint64,           0, &t->tries_left         },
-                { "Target",      "ReadOnly",        config_parse_tristate,         0, &t->make_read_only     },
+                { "Target",      "ReadOnly",        config_parse_tristate,         0, &t->read_only          },
                 { "Target",      "InstancesMax",    config_parse_instances_max,    0, &t->instances_max      },
                 { "Target",      "ProtectVersion",  config_parse_protect_version,  0, &t->protected_versions },
                 { "Target",      "RemoveTemporary", config_parse_bool,             0, &t->remove_temporary   },
+                { "Target",      "CurrentSymlink",  config_parse_current_symlink,  0, &t->current_symlink    },
                 {}
         };
         int r;
@@ -416,6 +452,10 @@ int transfer_read_definition(Transfer *t, const char *path) {
                         return log_oom();
         }
 
+        if (t->current_symlink && !RESOURCE_IS_FILESYSTEM(t->target.type) && !path_is_absolute(t->current_symlink))
+                return log_syntax(NULL, LOG_ERR, path, 1, SYNTHETIC_ERRNO(EINVAL),
+                                  "Current symlink must be absolute path if target is partition.");
+
         /* When no instance limit is set, use all available partition slots in case of partitions, or 5 in case of fs objects */
         if (t->instances_max == 0)
                 t->instances_max = t->target.type == RESOURCE_PARTITION ? UINT64_MAX : 5;
@@ -464,11 +504,11 @@ static void transfer_remove_temporary(Transfer *t) {
                 if (r == -ENOENT)
                         continue;
                 if (r < 0) {
-                        log_warning_errno(r, "Failed to remove temporary resource '%s/%s', ignoring: %m", t->target.path, de->d_name);
+                        log_warning_errno(r, "Failed to remove temporary resource instance '%s/%s', ignoring: %m", t->target.path, de->d_name);
                         continue;
                 }
 
-                log_debug("Removed temporary resource '%s/%s'.", t->target.path, de->d_name);
+                log_debug("Removed temporary resource instance '%s/%s'.", t->target.path, de->d_name);
         }
 }
 

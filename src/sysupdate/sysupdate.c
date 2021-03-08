@@ -444,13 +444,13 @@ static int context_show_version(Context *c, const char *version) {
         if (arg_json_format_flags & (JSON_FORMAT_OFF|JSON_FORMAT_PRETTY|JSON_FORMAT_PRETTY_AUTO))
                 (void) pager_open(arg_pager_flags);
 
-        printf("%s Version: %s\n"
+        printf("%s%s%s Version: %s\n"
                "    State: %s%s%s\n"
                "Installed: %s%s\n"
                "Available: %s%s\n"
                "Protected: %s%s%s\n"
                " Obsolete: %s%s%s\n\n",
-               update_set_flags_to_glyph(us->flags), us->version,
+               strempty(update_set_flags_to_color(us->flags)), update_set_flags_to_glyph(us->flags), ansi_normal(), us->version,
                strempty(update_set_flags_to_color(us->flags)), update_set_flags_to_string(us->flags), ansi_normal(),
                yes_no(us->flags & UPDATE_INSTALLED), FLAGS_SET(us->flags, UPDATE_INSTALLED|UPDATE_NEWEST) ? " (newest)" : "",
                yes_no(us->flags & UPDATE_AVAILABLE), (us->flags & (UPDATE_INSTALLED|UPDATE_AVAILABLE|UPDATE_NEWEST)) == (UPDATE_AVAILABLE|UPDATE_NEWEST) ? " (newest)" : "",
@@ -577,10 +577,10 @@ static int context_show_version(Context *c, const char *version) {
         if (!have_partition_attributes)
                 show_partition_columns = false;
 
-        if (!show_fs_columns)
-                (void) table_hide_column_from_display(t, 4, 5);
         if (!show_partition_columns)
                 (void) table_hide_column_from_display(t, 2, 3);
+        if (!show_fs_columns)
+                (void) table_hide_column_from_display(t, 4, 5);
         if (!have_size)
                 (void) table_hide_column_from_display(t, 6);
         if (!have_tries)

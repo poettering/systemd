@@ -26,7 +26,7 @@ struct PartitionInfo {
         uint64_t flags;
         sd_id128_t type, uuid;
         char *label;
-        char *device;
+        char *device; /* Note that this might point to some non-existing path in case we operate on a loopback file */
         bool read_only;
 };
 
