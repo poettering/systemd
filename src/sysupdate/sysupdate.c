@@ -31,7 +31,6 @@
  *   "reboot" verb
  *   optionally mark generated files/partitions/subvols read-only
  *   default to root block device if not specified otherwise
- *   optionally maintain symlink that points to current instance
  */
 
 static char *arg_definitions = NULL;

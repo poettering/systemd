@@ -236,7 +236,7 @@ static int config_parse_resource_pattern(
         return free_and_replace(*pattern, resolved);
 }
 
-static int config_parse_resource_path(
+static int config_parse_resource_source_path(
                 const char *unit,
                 const char *filename,
                 unsigned line,
@@ -262,11 +262,53 @@ static int config_parse_resource_path(
                 return 0;
         }
 
-        if (!path_is_valid(resolved) || !path_is_absolute(resolved))
-                return log_syntax(unit, LOG_ERR, filename, line, 0,
-                                  "Path= string is not valid, refusing: %s", resolved);
+        r = path_simplify_and_warn(resolved, PATH_CHECK_FATAL|PATH_CHECK_ABSOLUTE, unit, filename, line, lvalue);
+        if (r < 0)
+                return r;
 
         return free_and_replace(*path, resolved);
+}
+
+static int config_parse_resource_target_path(
+                const char *unit,
+                const char *filename,
+                unsigned line,
+                const char *section,
+                unsigned section_line,
+                const char *lvalue,
+                int ltype,
+                const char *rvalue,
+                void *data,
+                void *userdata) {
+
+        _cleanup_free_ char *resolved = NULL;
+        Transfer *t = data;
+        int r;
+
+        assert(rvalue);
+        assert(data);
+
+        if (streq(rvalue, "root")) {
+                /* The [Target]'s Path= setting understands a special value "root" */
+                t->target.path_root = true;
+                t->target.path = mfree(t->target.path);
+                return 0;
+        }
+
+        r = specifier_printf(rvalue, specifier_table, NULL, &resolved);
+        if (r < 0) {
+                log_syntax(unit, LOG_WARNING, filename, line, r,
+                           "Failed to expand specifiers in Path=, ignoring: %s", rvalue);
+                return 0;
+        }
+
+        r = path_simplify_and_warn(resolved, PATH_CHECK_FATAL|PATH_CHECK_ABSOLUTE, unit, filename, line, lvalue);
+        if (r < 0)
+                return r;
+
+        t->target.path_root = false;
+
+        return free_and_replace(t->target.path, resolved);
 }
 
 static DEFINE_CONFIG_PARSE_ENUM(config_parse_resource_type, resource_type, ResourceType, "Invalid resource type");
@@ -361,24 +403,24 @@ static int config_parse_partition_flags(
 int transfer_read_definition(Transfer *t, const char *path) {
 
         ConfigTableItem table[] = {
-                { "Transfer",    "MinVersion",      config_parse_min_version,      0, &t->min_version        },
-                { "Source",      "Type",            config_parse_resource_type,    0, &t->source.type        },
-                { "Source",      "Path",            config_parse_resource_path,    0, &t->source.path        },
-                { "Source",      "Pattern",         config_parse_resource_pattern, 0, &t->source.pattern     },
-                { "Source",      "PartitionType",   config_parse_resource_ptype,   0, &t->source             },
-                { "Target",      "Type",            config_parse_resource_type,    0, &t->target.type        },
-                { "Target",      "Path",            config_parse_resource_path,    0, &t->target.path        },
-                { "Target",      "Pattern",         config_parse_resource_pattern, 0, &t->target.pattern     },
-                { "Target",      "PartitionType",   config_parse_resource_ptype,   0, &t->target             },
-                { "Target",      "PartitionUUID",   config_parse_partition_uuid,   0, t                      },
-                { "Target",      "PartitionFlags",  config_parse_partition_flags,  0, t                      },
-                { "Target",      "Mode",            config_parse_mode,             0, &t->mode               },
-                { "Target",      "TriesLeft",       config_parse_uint64,           0, &t->tries_left         },
-                { "Target",      "ReadOnly",        config_parse_tristate,         0, &t->read_only          },
-                { "Target",      "InstancesMax",    config_parse_instances_max,    0, &t->instances_max      },
-                { "Target",      "ProtectVersion",  config_parse_protect_version,  0, &t->protected_versions },
-                { "Target",      "RemoveTemporary", config_parse_bool,             0, &t->remove_temporary   },
-                { "Target",      "CurrentSymlink",  config_parse_current_symlink,  0, &t->current_symlink    },
+                { "Transfer",    "MinVersion",      config_parse_min_version,          0, &t->min_version        },
+                { "Source",      "Type",            config_parse_resource_type,        0, &t->source.type        },
+                { "Source",      "Path",            config_parse_resource_source_path, 0, &t->source.path        },
+                { "Source",      "Pattern",         config_parse_resource_pattern,     0, &t->source.pattern     },
+                { "Source",      "PartitionType",   config_parse_resource_ptype,       0, &t->source             },
+                { "Target",      "Type",            config_parse_resource_type,        0, &t->target.type        },
+                { "Target",      "Path",            config_parse_resource_target_path, 0, t                      },
+                { "Target",      "Pattern",         config_parse_resource_pattern,     0, &t->target.pattern     },
+                { "Target",      "PartitionType",   config_parse_resource_ptype,       0, &t->target             },
+                { "Target",      "PartitionUUID",   config_parse_partition_uuid,       0, t                      },
+                { "Target",      "PartitionFlags",  config_parse_partition_flags,      0, t                      },
+                { "Target",      "Mode",            config_parse_mode,                 0, &t->mode               },
+                { "Target",      "TriesLeft",       config_parse_uint64,               0, &t->tries_left         },
+                { "Target",      "ReadOnly",        config_parse_tristate,             0, &t->read_only          },
+                { "Target",      "InstancesMax",    config_parse_instances_max,        0, &t->instances_max      },
+                { "Target",      "ProtectVersion",  config_parse_protect_version,      0, &t->protected_versions },
+                { "Target",      "RemoveTemporary", config_parse_bool,                 0, &t->remove_temporary   },
+                { "Target",      "CurrentSymlink",  config_parse_current_symlink,      0, &t->current_symlink    },
                 {}
         };
         int r;

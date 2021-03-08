@@ -68,6 +68,7 @@ struct Resource {
 
         /* Where to look for instances, and what to match precisely */
         char *path;
+        bool path_root; /* automatically find root path (only available if target resource, not source resource) */
         char *pattern;
         sd_id128_t partition_type;
         bool partition_type_set;
