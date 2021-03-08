@@ -30,7 +30,6 @@
  *   bsd blockdev lock
  *   "reboot" verb
  *   optionally mark generated files/partitions/subvols read-only
- *   default to root block device if not specified otherwise
  */
 
 static char *arg_definitions = NULL;
@@ -130,6 +129,12 @@ static int context_read_definitions(
         if (c->n_transfers == 0)
                 return log_error_errno(SYNTHETIC_ERRNO(ENOENT),
                                        "No transfer definitions loaded.");
+
+        for (size_t i = 0; i < c->n_transfers; i++) {
+                r = transfer_resolve_paths(c->transfers[i]);
+                if (r < 0)
+                        return r;
+        }
 
         return 0;
 }

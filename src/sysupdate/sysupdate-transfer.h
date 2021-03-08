@@ -51,4 +51,6 @@ DEFINE_TRIVIAL_CLEANUP_FUNC(Transfer*, transfer_free);
 
 int transfer_read_definition(Transfer *t, const char *path);
 
+int transfer_resolve_paths(Transfer *t);
+
 int transfer_make_room(Transfer *t, uint64_t space, const char *extra_protected_version);

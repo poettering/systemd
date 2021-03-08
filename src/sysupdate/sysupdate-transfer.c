@@ -1,5 +1,6 @@
 /* SPDX-License-Identifier: LGPL-2.1-or-later */
 
+#include "blockdev-util.h"
 #include "conf-parser.h"
 #include "dirent-util.h"
 #include "fd-util.h"
@@ -8,6 +9,7 @@
 #include "path-util.h"
 #include "rm-rf.h"
 #include "specifier.h"
+#include "stat-util.h"
 #include "strv.h"
 #include "sysupdate-pattern.h"
 #include "sysupdate-resource.h"
@@ -484,7 +486,7 @@ int transfer_read_definition(Transfer *t, const char *path) {
                 return log_syntax(NULL, LOG_ERR, path, 1, SYNTHETIC_ERRNO(EINVAL),
                                   "Source specification lacks Path= and Pattern=.");
 
-        if (!t->target.path)
+        if (!t->target.path && !t->target.path_root)
                 return log_syntax(NULL, LOG_ERR, path, 1, SYNTHETIC_ERRNO(EINVAL),
                                   "Target specification lacks Path= field.");
 
@@ -503,6 +505,65 @@ int transfer_read_definition(Transfer *t, const char *path) {
                 t->instances_max = t->target.type == RESOURCE_PARTITION ? UINT64_MAX : 5;
 
         return 0;
+}
+
+int transfer_resolve_paths(Transfer *t) {
+        _cleanup_free_ char *p = NULL;
+        dev_t d;
+        int r;
+
+        /* If Path=root is used in [Target] sections, let's automatically detect the path of root to
+         * use. Moreover, if this path points to a directory but we need a block device, automatically
+         * determine backing block device, so that users can reference block devices by mount point. */
+
+        assert(t);
+
+        if (t->target.path_root) {
+
+                /* NB: we don't actually check the backing device of the root fs "/", but of "/usr", in order
+                 * to support environments where the root fs is a tmpfs, and the OS itself placed exclusively
+                 * in /usr/. */
+
+                if (t->target.type != RESOURCE_PARTITION)
+                        return log_error_errno(SYNTHETIC_ERRNO(EOPNOTSUPP),
+                                               "Automatic root path discovery only supported for partition resources.");
+
+                r = get_block_device_harder("/usr/", &d);
+
+        } else if (t->target.type == RESOURCE_PARTITION) {
+                _cleanup_close_ int fd = -1;
+
+                fd = open(t->target.path, O_RDONLY|O_DIRECTORY|O_CLOEXEC);
+                if (fd < 0) {
+                        if (errno != ENOTDIR)
+                                return log_error_errno(errno, "Failed to open '%s': %m", t->target.path);
+
+                        /* Not a directory, hence no need to find backing block device for the path */
+                        return 0;
+                }
+
+                r = get_block_device_harder_fd(fd, &d);
+        } else
+                return 0; /* Otherwise assume there's nothing to resolve */
+
+        if (r < 0)
+                return log_error_errno(r, "Failed to determine block device of file system: %m");
+
+        r = block_get_whole_disk(d, &d);
+        if (r < 0)
+                return log_error_errno(r, "Failed to find whole disk device for partition backing file system: %m");
+        if (r == 0)
+                return log_error_errno(SYNTHETIC_ERRNO(EINVAL),
+                                       "File system is not placed on a partition block device, cannot determine whole block device backing root file system.");
+
+        r = device_path_make_canonical(S_IFBLK, d, &p);
+        if (r < 0)
+                return r;
+
+        log_info("Automatically discovered target block device '%s' for '%s'.", p, t->definition_path);
+
+        free_and_replace(t->target.path, p);
+        return 1;
 }
 
 static void transfer_remove_temporary(Transfer *t) {
