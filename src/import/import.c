@@ -95,7 +95,10 @@ static int open_source(const char *path, const char *local, int *ret_open_fd) {
 
                 retval = open_fd;
 
-                log_info("Importing '%s', saving as '%s'.", path, local);
+                if (arg_offset != UINT64_MAX)
+                        log_info("Importing '%s', saving in '%s' at offset %" PRIu64 ".", path, local, arg_offset);
+                else
+                        log_info("Importing '%s', saving as '%s'.", path, local);
         } else {
                 _cleanup_free_ char *pretty = NULL;
 
@@ -157,6 +160,9 @@ static int import_tar(int argc, char *argv[], void *userdata) {
         r = import_allocate_event_with_signals(&event);
         if (r < 0)
                 return r;
+
+        if (!FLAGS_SET(arg_import_flags, IMPORT_SYNC))
+                log_info("File system synchronization on completion is off.");
 
         r = tar_import_new(&import, event, arg_image_root, on_tar_finished, event);
         if (r < 0)
@@ -226,6 +232,9 @@ static int import_raw(int argc, char *argv[], void *userdata) {
         r = import_allocate_event_with_signals(&event);
         if (r < 0)
                 return r;
+
+        if (!FLAGS_SET(arg_import_flags, IMPORT_SYNC))
+                log_info("File system synchronization on completion is off.");
 
         r = raw_import_new(&import, event, arg_image_root, on_raw_finished, event);
         if (r < 0)
