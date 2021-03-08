@@ -31,6 +31,7 @@
  *   "reboot" verb
  *   optionally mark generated files/partitions/subvols read-only
  *   default to root block device if not specified otherwise
+ *   optionally maintain symlink that points to current instance
  */
 
 static char *arg_definitions = NULL;
@@ -577,17 +578,17 @@ static int context_show_version(Context *c, const char *version) {
                 show_partition_columns = false;
 
         if (!show_fs_columns)
-                (void) table_hide_column_from_display_internal(t, 4, 5);
+                (void) table_hide_column_from_display(t, 4, 5);
         if (!show_partition_columns)
-                (void) table_hide_column_from_display_internal(t, 2, 3);
+                (void) table_hide_column_from_display(t, 2, 3);
         if (!have_size)
-                (void) table_hide_column_from_display_internal(t, 6);
+                (void) table_hide_column_from_display(t, 6);
         if (!have_tries)
-                (void) table_hide_column_from_display_internal(t, 7, 8);
+                (void) table_hide_column_from_display(t, 7, 8);
         if (!have_ro)
-                (void) table_hide_column_from_display_internal(t, 9);
+                (void) table_hide_column_from_display(t, 9);
         if (!have_sha256)
-                (void) table_hide_column_from_display_internal(t, 10);
+                (void) table_hide_column_from_display(t, 10);
 
         return table_print_with_pager(t, arg_json_format_flags, arg_pager_flags, arg_legend);
 }
