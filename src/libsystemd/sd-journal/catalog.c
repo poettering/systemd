@@ -527,6 +527,8 @@ static int open_mmap(const char *database, int *_fd, struct stat *_st, void **_p
 
         if (st.st_size < (off_t) sizeof(CatalogHeader))
                 return -EINVAL;
+        if (st.st_size > SSIZE_MAX)
+                return -EFBIG;
 
         p = mmap(NULL, PAGE_ALIGN(st.st_size), PROT_READ, MAP_SHARED, fd, 0);
         if (p == MAP_FAILED)
