@@ -72,6 +72,19 @@ dmi:*:pnGoogleComputeEngine:*
  IMDS_KEY_IPV4_PUBLIC=/instance/network-interfaces/0/access-configs/0/external-ip
  IMDS_KEY_USERDATA_BASE=/instance/attributes
 
+# https://docs.oracle.com/en-us/iaas/Content/Compute/Tasks/gettingmetadata.htm#metadata-keys
+dmi:*:catOracleCloud.com:*
+ IMDS_VENDOR=oracle-cloud-oci
+ IMDS_DATA_URL=http://169.254.169.254/opc/v2
+ IMDS_ADDRESS_IPV4=169.254.169.254
+ IMDS_ADDRESS_IPV6=fd00:c1::a9fe:a9fe
+ IMDS_EXTRA_HEADER=Authorization: Bearer Oracle
+ IMDS_KEY_HOSTNAME=/instance/hostname
+ IMDS_KEY_REGION=/instance/region
+ IMDS_KEY_ZONE=/instance/availabilityDomain
+ IMDS_KEY_SSH_KEY=/instance/metadata/ssh_authorized_keys
+ IMDS_KEY_USERDATA_BASE64=/metadata/user_data
+
 # https://docs.hetzner.cloud/reference/cloud#description/server-metadata
 dmi:bvnHetzner:*
  IMDS_VENDOR=hetzner
