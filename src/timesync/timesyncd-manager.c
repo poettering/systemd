@@ -865,6 +865,10 @@ static int manager_resolve_varlink(Manager *m) {
         assert(m);
         assert(m->current_server_name);
 
+        /* This is called only after the previous connection attempt was cancelled, hence there cannot be an
+         * ongoing lookup anymore */
+        assert(!m->resolve_varlink);
+
         r = sd_varlink_connect_address(&link, "/run/systemd/resolve/io.systemd.Resolve");
         if (r < 0) {
                 log_debug_errno(r, "Failed to connect to systemd-resolved, using getaddrinfo(): %m");
